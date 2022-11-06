@@ -122,3 +122,10 @@ conda install 要安装的包名
 
 #pip安装
 pip install 安装的包名
+
+
+
+
+# pip安装源教程
+https://blog.csdn.net/qq_38316655/article/details/81463917
+
