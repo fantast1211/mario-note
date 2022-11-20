@@ -175,4 +175,45 @@ Docker 是一个 C/S 模式的架构，后端是一个松耦合架构，众多�
 
 ![1666627109381](image/docker入门/1666627109381.png)
 
-三、基础命令
+# 三、基础命令
+
+## 帮助类启动命令
+
+###### 启动docker:
+
+ `systemctl start docker`
+
+###### 停止docker：
+
+`systemctl stop docker`
+
+###### 重启docker：
+
+`systemctl restart docker`
+
+###### 查看docker状态：
+
+`systemctl status docker`
+
+###### 开机启动：
+
+`systemctl enable docker`
+
+###### 查看docker概要信息：
+
+`docker info`
+
+###### 查看docker总体帮助文档：
+
+`docker --help`
+
+###### 查看docker命令帮助文档：
+
+`docker 具体命令 --help`
+
+
+## 镜像命令
+
+## 容器命令
+
+## 小结
