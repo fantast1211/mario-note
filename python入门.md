@@ -2397,7 +2397,10 @@ AttributeError: 'Student' object has no attribute 'score'
 
 ## 8.2 使用@property
 
-
 # 问题记录
 
 2.有空还得看一下设计模式说实话
+
+# pip安装源教程
+
+https://blog.csdn.net/qq_38316655/article/details/81463917
