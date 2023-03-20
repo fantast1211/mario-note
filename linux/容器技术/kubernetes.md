@@ -62,6 +62,157 @@ gateway可以做业务层的处理，nginx其实只专注负载均衡
 
 ![1670248838254](image/kubernetes/1670248838254.png)
 
+# 2 docker
+
+## 2.1 docker架构
+
+![1671158144720](image/kubernetes/1671158144720.png)
+
+**名称解释**
+
+K8S：CRI（Container Runtime Interface）
+Client： 客户端；操作docker服务器的客户端（命令行或者界面）
+Docker_Host：Docker主机；安装Docker服务的主机
+Docker_Daemon：后台进程；运行在Docker服务器的后台进程
+Containers：容器；在Docker服务器中的容器（一个容器一般是一个应用实例，容器间互相隔离）
+Images：镜像、映像、程序包；Image是只读模板，其中包含创建Docker容器的说明。容器是由Image运行而来，Image固定不变。
+Registries：仓库；存储Docker Image的地方。官方远程仓库地址： https://hub.docker.com/search
+
+> Docker用Go编程语言编写，并利用Linux内核的多种功能来交付其功能。 Docker使用一种称为名称空间的技术来提供容器的隔离工作区。 运行容器时，Docker会为该容器创建一组名称空间。 这些名称空间提供了一层隔离。 容器的每个方面都在单独的名称空间中运行，并且对其的访问仅限于该名称空间。
+
+- 容器与虚拟机
+
+![1671158286274](image/kubernetes/1671158286274.png)
+
+## 2.2 Docker隔离原理
+
+### 2.2.1 namespace 6项隔离 （资源隔离）
+
+| namespace | 系统调用参数  | 隔离内容                   |
+| --------- | ------------- | -------------------------- |
+| UTS       | CLONE_NEWUTS  | 主机和域名                 |
+| IPC       | CLONE_NEWIPC  | 信号量、消息队列和共享内存 |
+| PID       | CLONE_NEWPID  | 进程编号                   |
+| Network   | CLONE_NEWNET  | 网络设备、网络栈、端口等   |
+| Mount     | CLONE_NEWNS   | 挂载点(文件系统)           |
+| User      | CLONE_NEWUSER | 用户和用户组               |
+
+## 2.2.2 cgroups资源限制 （资源限制）
+
+cgroup提供的主要功能如下：
+
+- 资源限制：限制任务使用的资源总额，并在超过这个 配额 时发出提示
+- 优先级分配：分配CPU时间片数量及磁盘IO带宽大小、控制任务运行的优先级
+- 资源统计：统计系统资源使用量，如CPU使用时长、内存用量
+- 任务控制：对任务执行挂起、恢复等操作
+
+cgroup资源控制系统，每种子系统独立地控制一种资源。功能如下
+
+![1671158659210](image/kubernetes/1671158659210.png)
+
+## 2.3 Docker安装
+
+以下以centos为例；
+更多其他安装方式，详细参照文档： https://docs.docker.com/engine/install/centos/
+
+省略
+
+## 2.4 Docker命令
+
+![1671158869097](image/kubernetes/1671158869097.png)
+
+详见 `https://github.com/fantast1211/mario-note/blob/main/linux/%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF/docker%E5%85%A5%E9%97%A8.md`
+
+根据正在运行的容器制作出相关的镜像：反向
+根据镜像启动一个容器：正向
+有了Docker：
+1、先去软件市场搜镜像：https://registry.hub.docker.com/ docker hub
+2、下载镜像 docker pull xxx
+3、启动软件 docker run 镜像名；
+对于镜像的所有管理操作都在这一个命令：docker image --help
+
+## 2.5 Docker命令逻辑图
+
+![1671159011288](image/kubernetes/1671159011288.png)
+
+## 2.6 Docker存储
+
+### 2.6.1 镜像是如何存储的
+
+#### 2.6.1.1 Images and layers
+
+Docker映像由一系列层组成。每层代表图像的Dokerfile中的一条指令。除最后一层外的每一层都是只读的。如以下Dockerfile:
+
+```shell
+FROM ubuntu:15.04
+COPY . /app
+RUN make /app
+CMD python /app/app.py
+```
+
+可以通过
+
+`docker history image`命令查看容器镜像
+
+该Dockerfile包含四个命令，每个命令创建一个层。
+FROM语句从ubuntu：15.04映像创建一个图层开始。
+COPY命令从Docker客户端的当前目录添加一些文件。
+RUN命令使用make命令构建您的应用程序。
+最后，最后一层指定要在容器中运行的命令。
+每一层只是与上一层不同的一组。 这些层彼此堆叠。
+创建新容器时，可以在基础层之上添加一个新的可写层。 该层通常称为“容器层”。 对运行中的容器所做的所有更改（例如写入新文件，修改现有文件和删除文件）都将写入此薄可写容器层。
+
+![1671159409572](image/kubernetes/1671159409572.png)
+
+#### 2.6.1.2 Container and layers
+
+容器和镜像之间的主要区别是可写顶层。
+在容器中添加新数据或修改现有数据的所有写操作都存储在此可写层中。
+删除容器后，可写层也会被删除。 基础图像保持不变。 因为每个容器都有其自己的可写容
+器层，并且所有更改都存储在该容器层中，所以多个容器可以共享对同一基础映像的访问，但具有自己的数据状态。
+
+
+
+下图显示了共享同一Ubuntu 15.04映像的多个容器。
+
+![1671159470126](image/kubernetes/1671159470126.png)
+
+#### 2.6.1.3 磁盘容量预估
+
+```shell
+docker ps -s
+size：用于每个容器的可写层的数据量（在磁盘上）。
+virtual size：容器使用的用于只读图像数据的数据量加上容器的可写图层大小。
+多个容器可以共享部分或全部只读图像数据。
+从同一图像开始的两个容器共享100％的只读数据，而具有不同图像的两个容器（具有相同的层）共享这些公共层。 因此，不能只对虚拟大小进行总计。这高估了总磁盘使用量，可能是一笔不小的数目。
+```
+
+#### 2.6.1.4 镜像如何挑选
+
+```shell
+busybox：是一个集成了一百多个最常用Linux命令和工具的软件。linux工具里的瑞士军刀
+alpine：Alpine操作系统是一个面向安全的轻型Linux发行版经典最小镜像，基于busybox，功能比
+Busybox完善。
+slim：docker hub中有些镜像有slim标识，都是瘦身了的镜像。也要优先选择
+无论是制作镜像还是下载镜像，优先选择alpine类型.
+```
+
+#### 2.6.1.5 copy on write
+
+- 写时复制是一种共享和复制文件的策略，可最大程度地提高效率。
+- 如果文件或目录位于映像的较低层中，而另一层（包括可写层）需要对其进行读取访问，则它仅使
+  用现有文件。
+- 另一层第一次需要修改文件时（在构建映像或运行容器时），将文件复制到该层并进行修改。 这
+  样可以将I / O和每个后续层的大小最小化。
+
+![1672722973169](image/kubernetes/1672722973169.png)
+
+
+
+
+
+
+
 # 存储
 
 ## 1 卷(Volume)
@@ -205,7 +356,7 @@ spec:
   capacity:
     storage: 10Gi                      # 定义PV的大小
   csi:
-    driver: nas.csi.everest.io         # 声明使用的驱动         
+    driver: nas.csi.everest.io         # 声明使用的驱动   
     fsType: nfs                        # 存储类型
     volumeAttributes:
       everest.io/share-export-location: sfs-nas01.cn-north-4b.myhuaweicloud.com:/share-96314776   # 挂载地址
