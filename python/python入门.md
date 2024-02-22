@@ -22,7 +22,7 @@ bash Anaconda3-2020.07-Linux-x86_64.sh
 
 过程中一直enter
 
-## 2.2 激活
+## 2.2 
 
 一般情况下，anaconda会自动将环境变量添加到PATH里面。（当然，这里说一班情况，那肯定有二班的情况。）如果后面你发现输出conda提示没有该命令，那么你需要手动添加：
 
@@ -98,7 +98,7 @@ conda activate env_name
 
 conda deactivate
 
-3. 显示、复制（克隆）、删除虚拟环境
+3. 显示、复制（克隆）、删除虚拟环境conda
    1） 显示安装过的所有虚拟环境
 
 conda info --envs

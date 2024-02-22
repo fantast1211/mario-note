@@ -464,4 +464,28 @@ docker挂载主机目录访问如果出现 `cannot open directory：Permission d
 
 `docker run -it  --privileged=true --volumes-from 父类  --name u2 ubuntu`
 
+挂载有两种方式，一种是按绝对路径挂载（存在空目录风险）
+
+另外一种是先通过docker创建挂载卷，然后再-v绑定这个挂载卷
+
 # 六、 Docker常规安装简介
+
+# 七、dockerfile
+
+## 7.1 指令
+
+ARG
+
+ARG构建时指定变量有效
+
+无法传递到运行时环境
+
+可以在dockerfile文件的任意位置使用
+
+ENV
+
+构建期+运行期都可以生效
+
+RUN
+
+执行没有上下文的概念
